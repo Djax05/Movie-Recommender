@@ -1,26 +1,30 @@
 import pandas as pd
+import numpy as np
+
+data = pd.read_csv("data/data_sample.csv")
+cosine_sim = np.load("data/cosine_sim.npy")
 
 
-data_sample = pd.read_csv("data/data_sample.csv")
-
-
-def recommend_within_cluster(title):
+def recommend_by_cosine(title, data, cosine_sim, top_n=10):
     title = title.strip().lower()
-    data_sample['movie_title_clean'] = data_sample['movie_title'].str.strip().str.lower()
+    data['movie_title_clean'] = data['movie_title'].str.strip().str.lower()
+    matches = data[data['movie_title_clean'] == title]
 
-    matches = data_sample[data_sample['movie_title_clean'] == title]
     if matches.empty:
-        return f"No movie found for '{title}'. Try a different title."
+        return f"No movie found for {title}"
 
-    cluster = matches['cluster_id'].values[0]
-    similar_movies = data_sample[data_sample['cluster_id'] == cluster]['movie_title'].tolist()
-    similar_movies.remove(matches['movie_title'].values[0])
-    return similar_movies
+    idx = matches.index[0]
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:top_n+1]
+
+    results = [(data["movie_title"].iloc[i], score) for i, score in sim_scores]
+    return results
 
 
 def main():
     print("Hello from movie-recommender!")
-    print(recommend_within_cluster("John Carter"))
+    title = str(input("Enter a movie title: "))
+    print(recommend_by_cosine(title, data, cosine_sim))
 
 
 if __name__ == "__main__":
