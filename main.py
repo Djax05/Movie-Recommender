@@ -2,14 +2,14 @@ import pandas as pd
 import numpy as np
 
 data = pd.read_csv("data/data_sample.csv")
-cosine_sim = np.load("data/cosine_sim.npy")
+cosine_sim = np.load("data/cosine_sim_semantic.npy")
 
 
-def recommend_by_cosine(title, data, cosine_sim, top_n=10):
+def recommend_by_semantics(title, data, cosine_sim, top_n=10):
     title = title.strip().lower()
     data['movie_title_clean'] = data['movie_title'].str.strip().str.lower()
-    matches = data[data['movie_title_clean'] == title]
 
+    matches = data[data['movie_title_clean'] == title]
     if matches.empty:
         return f"No movie found for {title}"
 
@@ -24,7 +24,7 @@ def recommend_by_cosine(title, data, cosine_sim, top_n=10):
 def main():
     print("Hello from movie-recommender!")
     title = str(input("Enter a movie title: "))
-    print(recommend_by_cosine(title, data, cosine_sim))
+    print(recommend_by_semantics(title, data, cosine_sim))
 
 
 if __name__ == "__main__":
