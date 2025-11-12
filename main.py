@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import re
 
 data = pd.read_csv("data/data_sample.csv")
 cosine_sim = np.load("data/cosine_sim_semantic.npy")
@@ -19,6 +20,13 @@ def recommend_by_semantics(title, data, cosine_sim, top_n=10):
 
     results = [(data["movie_title"].iloc[i], score) for i, score in sim_scores]
     return results
+
+
+data['movie_title'] = (
+    data['movie_title']
+    .astype(str)
+    .apply(lambda x: re.sub(r'\s+', ' ', x.replace('\xa0', ' ')).strip())
+)
 
 
 def main():
