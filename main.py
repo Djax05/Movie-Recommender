@@ -3,10 +3,18 @@ import numpy as np
 import re
 
 data = pd.read_csv("data/data_sample.csv")
-cosine_sim = np.load("data/cosine_sim_semantic.npy")
+semantic_sim = np.load("data/cosine_sim_semantic.npy")
+genre_sim = np.load("data/genre_similarity.npy")
+numeric_sim = np.load("data/numeric_sim.npy")
+
+w_semantic = 0.5
+w_genre = 0.3
+w_numeric = 0.2
+
+hybrid_sim = (w_semantic * semantic_sim) + (w_genre * genre_sim) + (w_numeric * numeric_sim)
 
 
-def recommend_by_semantics(title, data, cosine_sim, top_n=10):
+def recommend_hybrid(title, data, hybrid_sim, top_n=10):
     title = title.strip().lower()
     data['movie_title_clean'] = data['movie_title'].str.strip().str.lower()
 
@@ -15,7 +23,7 @@ def recommend_by_semantics(title, data, cosine_sim, top_n=10):
         return f"No movie found for {title}"
 
     idx = matches.index[0]
-    sim_scores = list(enumerate(cosine_sim[idx]))
+    sim_scores = list(enumerate(hybrid_sim[idx]))
     sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:top_n+1]
 
     results = [(data["movie_title"].iloc[i], score) for i, score in sim_scores]
@@ -32,7 +40,7 @@ data['movie_title'] = (
 def main():
     print("Hello from movie-recommender!")
     title = str(input("Enter a movie title: "))
-    print(recommend_by_semantics(title, data, cosine_sim))
+    print(recommend_hybrid(title, data, hybrid_sim))
 
 
 if __name__ == "__main__":
