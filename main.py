@@ -1,46 +1,43 @@
-import pandas as pd
 import numpy as np
-import re
+import faiss
+import json
 
-data = pd.read_csv("data/data_sample.csv")
-semantic_sim = np.load("data/cosine_sim_semantic.npy")
-genre_sim = np.load("data/genre_similarity.npy")
-numeric_sim = np.load("data/numeric_sim.npy")
-
-w_semantic = 0.5
-w_genre = 0.3
-w_numeric = 0.2
-
-hybrid_sim = (w_semantic * semantic_sim) + (w_genre * genre_sim) + (w_numeric * numeric_sim)
+embeddings = np.load("data/sentence_embeddings.npy").astype("float32")
 
 
-def recommend_hybrid(title, data, hybrid_sim, top_n=10):
-    title = title.strip().lower()
-    data['movie_title_clean'] = data['movie_title'].str.strip().str.lower()
 
-    matches = data[data['movie_title_clean'] == title]
-    if matches.empty:
-        return f"No movie found for {title}"
+def recommend_by_faiss(title, embeddings):
 
-    idx = matches.index[0]
-    sim_scores = list(enumerate(hybrid_sim[idx]))
-    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:top_n+1]
+    title = title.lower().strip()
+    with open("data/title_to_index.json", "r", encoding="utf-8") as f:
+        title_to_index = json.load(f)
 
-    results = [(data["movie_title"].iloc[i], score) for i, score in sim_scores]
-    return results
+    title_to_index = {k.lower().strip(): v for k, v in title_to_index.items()}
+    index_to_title = {int(v): k for k, v in title_to_index.items()}
 
+    faiss.normalize_L2(embeddings)
 
-data['movie_title'] = (
-    data['movie_title']
-    .astype(str)
-    .apply(lambda x: re.sub(r'\s+', ' ', x.replace('\xa0', ' ')).strip())
-)
+    dim = embeddings.shape[1]
+    index = faiss.IndexFlatL2(dim)
+    index.add(embeddings)
+
+    query_title = title
+    query_id = title_to_index[query_title]
+
+    query_vec = embeddings[query_id].reshape(1, -1)
+    faiss.normalize_L2(query_vec)
+
+    distances, indices = index.search(query_vec, 10)
+
+    print("\nTop 10 recommendations for:", query_title)
+    for i, (idx, score) in enumerate(zip(indices[0], distances[0])):
+        print(f"{i+1}. {index_to_title[idx]} (score: {score})")
 
 
 def main():
     print("Hello from movie-recommender!")
-    title = str(input("Enter a movie title: "))
-    print(recommend_hybrid(title, data, hybrid_sim))
+    # title = str(input("Enter a movie title: "))
+    print(recommend_by_faiss("John Carter", embeddings))
 
 
 if __name__ == "__main__":
