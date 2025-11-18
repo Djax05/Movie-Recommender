@@ -3,41 +3,42 @@ import faiss
 import json
 
 embeddings = np.load("data/sentence_embeddings.npy").astype("float32")
+faiss.normalize_L2(embeddings)
+
+index = faiss.read_index("data/faiss_index.bin")
+
+with open("data/title_to_index.json", "r", encoding="utf-8") as f:
+    title_to_index = json.load(f)
+
+title_to_index = {k.lower().strip(): v for k, v in title_to_index.items()}
+
+index_to_title = {v: k for k, v in title_to_index.items()}
 
 
-
-def recommend_by_faiss(title, embeddings):
-
+def recommend(title, k=10):
     title = title.lower().strip()
-    with open("data/title_to_index.json", "r", encoding="utf-8") as f:
-        title_to_index = json.load(f)
 
-    title_to_index = {k.lower().strip(): v for k, v in title_to_index.items()}
-    index_to_title = {int(v): k for k, v in title_to_index.items()}
+    if title not in title_to_index:
+        return f"Movie '{title}' not found."
 
-    faiss.normalize_L2(embeddings)
+    movie_id = title_to_index[title]
 
-    dim = embeddings.shape[1]
-    index = faiss.IndexFlatL2(dim)
-    index.add(embeddings)
-
-    query_title = title
-    query_id = title_to_index[query_title]
-
-    query_vec = embeddings[query_id].reshape(1, -1)
+    query_vec = embeddings[movie_id].reshape(1, -1)
     faiss.normalize_L2(query_vec)
 
-    distances, indices = index.search(query_vec, 10)
+    distances, indices = index.search(query_vec, k + 1)
 
-    print("\nTop 10 recommendations for:", query_title)
-    for i, (idx, score) in enumerate(zip(indices[0], distances[0])):
-        print(f"{i+1}. {index_to_title[idx]} (score: {score})")
+    indices = indices[0][1:]
+    distances = distances[0][1:]
+
+    results = [(index_to_title[int(idx)], float(dist)) for idx, dist in zip(indices, distances)]
+    return results
 
 
 def main():
     print("Hello from movie-recommender!")
     # title = str(input("Enter a movie title: "))
-    print(recommend_by_faiss("John Carter", embeddings))
+    print(recommend("John Carter"))
 
 
 if __name__ == "__main__":
