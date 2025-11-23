@@ -7,8 +7,8 @@ sentence_embeddings = np.load("data/sentence_embeddings.npy").astype("float32")
 encoded_data = pd.read_csv("data/encoded_data.csv").values.astype("float32")
 numeric_scaled = np.load("data/numeric_scaled.npy").astype("float32")
 
-w_sentence = 0.8
-w_genre = 0.5
+w_sentence = 0.5
+w_genre = 0.3
 w_numeric = 0.2
 
 sentence_w = sentence_embeddings * w_sentence
