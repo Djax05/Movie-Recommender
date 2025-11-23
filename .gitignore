@@ -1,5 +1,5 @@
 .venv
 __pycache__/
-data/cosine_sim.npy
-data/cosine_sim_semantic.npy
+data/numeric_scaled.npy
+data/sentence_embeddings.npy
 /movie_metadata

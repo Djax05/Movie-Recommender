@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
-import faiss
+from sklearn.preprocessing import normalize
 import json
+import pickle
 
 sentence_embeddings = np.load("data/sentence_embeddings.npy").astype("float32")
 encoded_data = pd.read_csv("data/encoded_data.csv").values.astype("float32")
@@ -21,9 +22,10 @@ full_features = np.hstack([
     numeric_w
 ])
 
-faiss.normalize_L2(full_features)
+full_features_norm = normalize(full_features)
 
-index = faiss.read_index("data/faiss_index.bin")
+with open("data/pynndescent_index.pkl", 'rb') as f:
+    index = pickle.load(f)
 
 with open("data/title_to_index.json", "r", encoding="utf-8") as f:
     title_to_index = json.load(f)
@@ -52,9 +54,10 @@ def recommend(title, k=10):
 
     query_vec = query_vec.reshape(1, -1)
 
-    faiss.normalize_L2(query_vec)
+    query_vec = normalize(query_vec)
 
-    distances, indices = index.search(query_vec, k + 1)
+
+    indices, distances = index.query(query_vec, k=10)
 
     indices = indices[0][1:]
     distances = distances[0][1:]

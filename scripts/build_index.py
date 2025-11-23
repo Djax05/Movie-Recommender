@@ -1,8 +1,8 @@
-import faiss
+import pickle
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import normalize
-
+from pynndescent import NNDescent
 
 sentence_embeddings = np.load("data/sentence_embeddings.npy").astype("float32")
 encoded_data = pd.read_csv("data/encoded_data.csv").astype("float32")
@@ -30,10 +30,14 @@ full_features = np.hstack([
 
 full_features_norm = normalize(full_features)
 
-index = faiss.IndexFlatIP(full_features_norm.shape[1])
+index = NNDescent(
+    full_features_norm,
+    metric="cosine",
+    n_neighbors=15,
+    n_jobs=-1
+)
 
-index.add(full_features_norm.astype("float32"))
+with open("data/pynndescent_index.pkl", 'wb') as f:
+    pickle.dump(index, f)
 
-faiss.write_index(index, "data/faiss_index.bin")
-
-print("Faiss Index saved")
+print("Pynndescent Index saved")
