@@ -5,6 +5,7 @@ import json
 import pickle
 from pathlib import Path
 from typing import List, Dict, Optional
+from api.core.logging import get_logger
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,10 +21,12 @@ SENTENCE_WEIGHT = 0.5
 GENRE_WEIGHT = 0.3
 NUMERIC_WEIGHT = 0.2
 
+logger = get_logger(__name__)
+
 
 class MovieRecommender:
     def __init__(self):
-        print("Loading Movie recommnder...")
+        logger.info("Loading Movie recommnder...")
 
         self.sentence_embeddings = np.load(SENTENCE_EMBEDDING).astype(
             "float32")
@@ -48,6 +51,7 @@ class MovieRecommender:
         self.index_to_title = {v: k for k, v in self.title_to_index.items()}
 
         print(f"Loaded {len(self.title_to_index)} movies")
+        logger.info("Movie recommender loaded")
 
     def get_recommendations(self,
                             title: str, k: int = 10
